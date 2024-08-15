@@ -43,10 +43,18 @@ public final class OTLPGRPCSpanExporter: OTelSpanExporter {
     ) {
         self.configuration = configuration
 
-        var connectionConfiguration = ClientConnection.Configuration.default(
-            target: .host(configuration.endpoint.host, port: configuration.endpoint.port),
-            eventLoopGroup: group
-        )
+        var connectionConfiguration = if configuration.endpoint.isInsecure {
+            ClientConnection.Configuration.default(
+                target: .host(configuration.endpoint.host, port: configuration.endpoint.port),
+                eventLoopGroup: group
+            )
+        } else {
+            ClientConnection.Configuration(
+                target: .host(configuration.endpoint.host, port: configuration.endpoint.port),
+                eventLoopGroup: group,
+                tls: .init(configuration: .clientDefault)
+            )
+        }
 
         if configuration.endpoint.isInsecure {
             logger.debug("Using insecure connection.", metadata: [
